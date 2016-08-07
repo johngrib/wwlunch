@@ -2,25 +2,41 @@
 'use strict';
 /* jshint esversion: 6 */
 
-const program = require('commander');
 const getJSON = require('get-json');
 const bob_url = 'https://spreadsheets.google.com/feeds/list/1GqW4dY5DSUZ4Qkg7NnbKBrQnaw9goNooarjb1IgqYac/od6/public/values?alt=json';
+const program = {
+    next: 0,
+    date: new Date()
+};
 
-(function(){
-    program
-      .version('0.0.1')
-      .usage('[options]')
-      .option('-n, --next <number>', 'An integer argument', parseInt)
-      .option('-d, --date <YYYY.MM.dd>', 'date formatted string argument', (v) => new Date(v))
-      .parse(process.argv);
+(function(args){
 
-    program.next = program.next || 0;
-    program.date = program.date || new Date();
+    if(args.length === 1 && args[0] === '--help') {
+        print_help();
+        return 0;
+    }
+
+    args.forEach((v) => {
+        if(/^\-?\d+$/.test(v)) {
+            program.next = parseInt(v, 10);
+        } else if(/^\d{4}\.\d\d\.\d\d$/.test(v)) {
+            program.date = new Date(v);
+        } else if(/^\d\d\.\d\d$/.test(v)) {
+            program.date = new Date(new Date().getFullYear() + '.' + v);
+        }
+    });
 
     getJSON(bob_url, main);
-})();
+
+    return 0;
+
+})(process.argv.slice(2));
 
 function main(error, json) {
+
+    if(error) {
+        return 1;
+    }
 
     const today = program.date;
     const list = json.feed.entry;
@@ -43,8 +59,6 @@ function main(error, json) {
     })(program.next);
 
     print_result(result_list);
-
-    return 0;
 }
 
 function print_result(obj){
@@ -119,3 +133,21 @@ function binary_search_slicer(date_checker, list) {
     }
 }
 
+function print_help(){
+        var deco = (str) => ('\t' + str + '\n');
+
+        var msg = '\n';
+        msg += deco('wwlunch -- list woowabros. kitchen menu\n');
+        msg += deco('HOW TO USE');
+        msg += deco('  wwlunch [daycount] [YYYY.DD.MM]');
+        msg += deco('  wwlunch [YYYY.DD.MM] [daycount]');
+        msg += deco('EXAMPLE');
+        msg += deco('  wwlunch');
+        msg += deco('  wwlunch 3');
+        msg += deco('  wwlunch 2016.08.08');
+        msg += deco('  wwlunch 08.08');
+        msg += deco('  wwlunch 5 2016.08.08');
+        msg += deco('  wwlunch 2016.08.08 5');
+
+        console.log(msg);
+}
