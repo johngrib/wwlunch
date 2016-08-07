@@ -9,6 +9,7 @@ const program = {
     date: new Date()
 };
 
+// initialize
 (function(args){
 
     if(args.length === 1 && args[0] === '--help') {
@@ -32,18 +33,19 @@ const program = {
 
 })(process.argv.slice(2));
 
+/**
+ * 메뉴 json 을 가져오면 콜백으로 실행된다.
+ */
 function main(error, json) {
 
     if(error) {
         return 1;
     }
 
-    const today = program.date;
-    const list = json.feed.entry;
-
     // 재귀 함수에 리미터를 부착하여 오버플로우를 방지한다.
     const search = add_limiter_on_function(binary_search_slicer, 100);
-    const date_checker = get_date_checker(today);
+    const date_checker = get_date_checker(program.date);
+    const list = json.feed.entry;
 
     const result = search.bind
         ({}, date_checker)
@@ -61,6 +63,9 @@ function main(error, json) {
     print_result(result_list);
 }
 
+/**
+ * 결과를 출력한다.
+ */
 function print_result(obj){
     const filtered = obj.map((o) => {
         return { date: o.gsx$date.$t, breakfast: o.gsx$breakfast.$t, lunch: o.gsx$lunch.$t };
@@ -88,6 +93,9 @@ function add_limiter_on_function(func, limit) {
     };
 }
 
+/**
+ * binary search 에서 사용할 날짜 검사기를 리턴한다.
+ */
 function get_date_checker(date) {
     const today = new Date(date).setHours(0,0,0,0);
     const tomorrow = new Date(today).setHours(24,0,0,0);
@@ -102,6 +110,9 @@ function get_date_checker(date) {
     };
 }
 
+/**
+ * 이진 탐색을 수행한다.
+ */
 function binary_search_slicer(date_checker, list) {
 
     var body = list.body;
